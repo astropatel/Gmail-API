@@ -1,6 +1,9 @@
+import re
 import glob
 import base64
 import os.path
+import numpy as np
+import pandas as pd
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -11,8 +14,11 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
 # from email.message import EmailMessage
 # from googleapiclient.errors import HttpError
+
+__author__ = 'Rahul I. Patel, PhD'
 
 event_day = 'THURS.'
 event_month = 'June'
@@ -76,7 +82,9 @@ html_content = f"""
 # todo: get list_labels to work - results line throws 403 error
 
 # If modifying these scopes, delete the file token.json.
+# Check out more scopes here: https://developers.google.com/identity/protocols/oauth2/scopes
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/spreadsheets.readonly',
           'https://www.googleapis.com/auth/drive',
           'https://www.googleapis.com/auth/gmail.send',
           'https://www.googleapis.com/auth/drive.file',
@@ -90,6 +98,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets',
           'https://www.googleapis.com/auth/gmail.addons.current.action.compose',
           'https://www.googleapis.com/auth/gmail.addons.current.message.action',
           ]
+
 
 # THIS HELPS TO SUPPRESS OATH SCOPE CHANGE WARNINGS
 # https://stackoverflow.com/questions/51499034/google-oauthlib-scope-has-changed
@@ -124,11 +133,12 @@ def get_emails_by_label(service, label_id):
 
     return emails
 
+
 def list_labels(service):
     """
     Return list of labels in google contacts.
     Args:
-        service: (api client) google apie client object [googleapiclient.discovery.Resource]
+        service: (api client) google api client object [googleapiclient.discovery.Resource]
 
     Returns:
         list of labels
@@ -139,16 +149,18 @@ def list_labels(service):
     for label in labels:
         print(f'Label: {label["name"]}, ID: {label["id"]}')
     return labels
-def get_contacts(service):
+
+
+def get_contacts_gmail(people_service):
     """
     Get all contacts from gmail account
     Args:
-        service: (api client) google apie client object [googleapiclient.discovery.Resource]
+        people_service: (api client) google api client object for People API[googleapiclient.discovery.Resource]
 
     Returns:
         list of contacts
     """
-    results = service.people().connections().list(
+    results = people_service.people().connections().list(
         resourceName='people/me',
         pageSize=100,
         personFields='names,emailAddresses').execute()
@@ -158,14 +170,77 @@ def get_contacts(service):
     for person in connections:
         # names = person.get('names', [])
         email_addresses = person.get('emailAddresses', [])
-        #if names and email_addresses:
+        # if names and email_addresses:
         if email_addresses:
-            #name = names[0].get('displayName')
+            # name = names[0].get('displayName')
             email = email_addresses[0].get('value')
             contacts.append(email)
             # contacts.append((name, email))
+    if not contacts:
+        print('No gmail contacts. List is empty')
 
     return contacts
+
+
+def get_all_sheets(service_drive):
+    """
+
+    Args:
+        service_drive: (api client) google api client object for google drive api
+         [googleapiclient.discovery.Resource]
+
+    Returns:
+        dictionary with sheet names, url, and sheet id {'[name]':{'url':..., 'id':...}...}
+    """
+    query = "mimeType='application/vnd.google-apps.spreadsheet'"
+
+    # Call the Drive API to list files
+    results = service_drive.files().list(q=query, fields="files(id, name)").execute()
+    items = results.get('files', [])
+    sheets_part_addy = 'https://docs.google.com/spreadsheets/d/'
+    sheets_info = {}
+    if not items:
+        print('No sheet files found. Dictionary is Empty')
+    else:
+        for item in items:
+            sheets_info[item['name']] = {'url': f"{sheets_part_addy}{item['id']}/edit",
+                                         'id': item['id']}
+
+    return sheets_info
+
+
+def get_contacts_sheets(service_sheets, service_drive, find_regex):
+    """
+    todo: remove service drive when it turns into a class
+    Args:
+        service_sheets:
+        find_regex:
+
+    Returns:
+
+    """
+    regex = re.compile(find_regex, re.IGNORECASE)
+    sheets_info_dict = get_all_sheets(service_drive)
+    try:
+        name_of_email_sheet = list(filter(regex.match,
+                                          sheets_info_dict.keys()))[0]
+    except:
+        name_of_email_sheet = None
+        print(f'Could not find sheet with regex: {find_regex}')
+        print('Reason unknown')
+
+    sheet = service_sheets.spreadsheets()
+    spreadsheet_id = sheets_info_dict[name_of_email_sheet]['id']
+    sheet_range = '!A:Z'
+    result = sheet.values().get(spreadsheetId=spreadsheet_id, range=sheet_range).execute()
+    values = result.get('values', [])
+    if not values:
+        print('no data found')
+
+    df = pd.DataFrame(values[1:], columns=values[0][0:-1])
+    sheet_emails = df['Email Address']
+
+    return sheet_emails
 
 
 def create_message(sender, bcc, subject, html_content,
@@ -195,18 +270,18 @@ def create_message(sender, bcc, subject, html_content,
 
     if attach_file_names:
         for file_attach in attach_file_names:
-            with open(file_attach,'rb') as f:
-                mime_base = MIMEBase('application','octet-stream')
+            with open(file_attach, 'rb') as f:
+                mime_base = MIMEBase('application', 'octet-stream')
                 mime_base.set_payload(f.read())
                 encoders.encode_base64(mime_base)
                 mime_base.add_header('Content-Disposition',
-                                     'attachment',filename=file_attach)
+                                     'attachment', filename=file_attach)
                 message.attach(mime_base)
-
 
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
     return {'raw': encoded_message}
+
 
 def send_message(service, user_id, message):
     """
@@ -227,6 +302,7 @@ def send_message(service, user_id, message):
         return message
     except Exception as error:
         print(f'An error occurred: {error}')
+
 
 def create_token():
     """
@@ -261,31 +337,46 @@ def create_token():
             token.write(creds.to_json())
     return creds
 
+
 def main():
     creds = create_token()
+    # INITIALIZE APIS
     # Initialize the Gmail API
     service_gmail = build('gmail', 'v1', credentials=creds)
     # Initialize the People API
     people_service = build('people', 'v1', credentials=creds)
+    # Initialize google Drive Service
+    service_drive = build('drive', 'v3', credentials=creds)
+    # Initialize google sheets service
+    service_sheets = build('sheets', 'v4', credentials=creds)
 
-    # Get contacts
-    # contacts = get_contacts(people_service)
-    # contacts from google sheets
+    # GET CONTACTS
+    contacts_gmail = get_contacts_gmail(people_service)
+    # contacts from GOOGLE sheets
+    find_regex = '.*Email*.*Responses*.'
+    contacts_sheet = get_contacts_sheets(service_sheets, service_drive, find_regex).to_list()
+    new_email_list = np.concatenate([contacts_sheet, contacts_gmail])
+    new_email_list = np.unique(new_email_list)
+
     # join and get unique values
-    # contacts_to_bcc = ','.join(contacts)
-
-    file_path = '/Users/darthpatel/Library/CloudStorage/GoogleDrive-aotnashville@gmail.com/My Drive/Event_flyers/'
-    files_2_attach = glob.glob(f'{file_path}*{event_month}*')
+    contacts_to_bcc_string = ','.join(new_email_list)
+    print(f'contacts bcc:{contacts_to_bcc_string}')
 
     contacts_to_bcc = 'ripatel272@gmail.com,anakha.1@gmail.com'
     # Email details
     sender = 'aotnashville@gmail.com'
     subject = f'[Astro on Tap] {event_month} {event_date} - {event_edition}'
     message_text = html_content
-    message_dict = create_message(sender,contacts_to_bcc,subject,
-                                  message_text,files_2_attach)
 
-    send_message(service_gmail,'me',message_dict)
+    # FILES TO ATTACH
+    file_path = '/Users/darthpatel/Library/CloudStorage/GoogleDrive-aotnashville@gmail.com/My Drive/Event_flyers/'
+    files_2_attach = glob.glob(f'{file_path}*{event_month}*')
+
+    # PUT IT ALL TOGETHER
+    message_dict = create_message(sender, contacts_to_bcc, subject,
+                                  message_text, files_2_attach)
+
+    send_message(service_gmail, 'me', message_dict)
 
 
 if __name__ == '__main__':

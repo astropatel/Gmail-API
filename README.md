@@ -1,5 +1,8 @@
 # Gmail-API
 
+## Quick Use 
+modify and run `send_emails.py`. It uses functions from `gmail_api_tools.py`. If you haven't already set-up the API tokens, see below for details.
+
 Use this to send emails through gmail using python. Right now, it's optimized for [Astronomy on Tap - Nashville monthly email announcements]([url](https://astronomyontap.org/locations/nashville-tn/)).
 
 ## Current features include:

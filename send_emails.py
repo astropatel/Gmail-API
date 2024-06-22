@@ -12,9 +12,9 @@ event_month = 'June'
 event_date = '27th'
 event_edition = 'Summer Solstice Edition'
 
-speaker1_name = 'Dr. Chayan Chatterjee'
+speaker1_name = 'Dr. blah'
 speaker1_title = 'Listening to the Cosmic Orchestra Using A.I.'
-speaker2_name = 'Dr. Aaron Stemo'
+speaker2_name = 'Dr. blah2'
 speaker2_title = 'Black Holes Don\'t Suck'
 eventbrite_link = 'https://www.eventbrite.com/e/astronomy-on-tap-summer-solstice-edition-tickets-924614435667?aff=ebdsoporgprofile'
 location = 'Jackalope Brewing – Tap Room'
@@ -86,20 +86,20 @@ new_email_list = np.unique(new_email_list)
 contacts_to_bcc_string = ','.join(new_email_list)
 print(f'contacts bcc:{contacts_to_bcc_string}')
 
-contacts_to_bcc = 'ripatel272@gmail.com,anakha.1@gmail.com'
+contacts_to_bcc = 'email1@gmail.com,email2@gmail.com'
 
 # ================================================================
 # EMAIL DETAILS
 # ================================================================
-sender = 'aotnashville@gmail.com'
-sender_name = 'Astro on Tap Nashville'
+sender = 'email_sender@gmail.com'
+sender_name = 'Astro on Tap'
 
 subject = f'[Astro on Tap] {event_month} {event_date} - {event_edition}'
 message_text = html_content
 
 # FLYERS TO ATTACH - LOOK FOR CURRENT MONTH FLYERS
-file_path = ('/Users/darthpatel/Library/CloudStorage/GoogleDrive-'
-             'aotnashville@gmail.com/My Drive/Event_flyers/')
+file_path = ('/Users/.../Library/CloudStorage/GoogleDrive-'
+             'eamil_sender@gmail.com/My Drive/Event_flyers/')
 files_2_attach = glob.glob(f'{file_path}*{event_month}*')
 
 # ================================================================

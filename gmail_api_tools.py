@@ -55,14 +55,17 @@ def create_token():
     """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is created automatically when the authorization flow completes for the first time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    google_token = 'tokens/google_token.json'
+    google_credentials = 'tokens/credentials.json'
+
+    if os.path.exists(google_token):
+        creds = Credentials.from_authorized_user_file(google_token, SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(google_credentials, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open('token.json', 'w') as token:
@@ -74,6 +77,8 @@ def create_message(sender, bcc, subject, html_content,
                    attach_file_names=None,
                    to='',sender_name=''):
     """
+    Create an encoded message dictionary that can be sent through Gmail
+    with the Gmail API
 
     Args:
         sender: (str) email address of sender
@@ -163,7 +168,7 @@ class GmailAPI:
 
     def list_labels(self):
         """
-        Return list of labels in google contacts.]
+        Return list of labels in google contacts.
 
         Returns:
             list of labels
@@ -177,7 +182,8 @@ class GmailAPI:
 
     def get_contacts_gmail(self):
         """
-        Get all contacts from gmail account
+        Get all emails from contacts in gmail account.
+
         Returns:
             list of contacts
         """
@@ -204,6 +210,8 @@ class GmailAPI:
 
     def get_all_sheets(self):
         """
+        Get the names, IDs, and urls of all the Google sheets in your
+        Google Drive.
 
         Returns:
             dictionary with sheet names, url, and sheet id {'[name]':{'url':..., 'id':...}...}
@@ -226,12 +234,15 @@ class GmailAPI:
 
     def get_contacts_sheets(self, find_regex):
         """
+        Get the email addresses of all the contacts in
+        a given sheet.
         todo: remove service drive when it turns into a class
         Args:
-            find_regex:
+            find_regex: (str) Regex expression to use to search for the
+             right Google sheet
 
         Returns:
-
+            Single column pandas dataframe of email addresses in the Google sheet
         """
         regex = re.compile(find_regex, re.IGNORECASE)
         sheets_info_dict = self.get_all_sheets()
@@ -259,7 +270,7 @@ class GmailAPI:
 
     def send_message(self, user_id, message):
         """
-
+        Send a message through gmail.
         Args:
             user_id: (str) user id for email address of mailbox that you're accessing. use "me" for
              current authenticated user.

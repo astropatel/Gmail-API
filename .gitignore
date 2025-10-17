@@ -1,8 +1,10 @@
 # TOKEN AND CREDENTIALS
 Tokens/
-send_emails_rahul.py
+send_emails.py
 
 .idea/
+
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

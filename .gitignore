@@ -1,6 +1,6 @@
 # TOKEN AND CREDENTIALS
 Tokens/
-send_emails.py
+send_emails_main.py
 
 .idea/
 

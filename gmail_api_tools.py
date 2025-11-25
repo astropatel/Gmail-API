@@ -232,38 +232,35 @@ class GmailAPI:
 
         return sheets_info
 
-    def get_contacts_sheets(self, find_regex):
+    def get_contacts_sheets(self, sheet_name, tab_name):
+
         """
         Get the email addresses of all the contacts in
         a given sheet.
         todo: remove service drive when it turns into a class
         Args:
-            find_regex: (str) Regex expression to use to search for the
-             right Google sheet
+            sheet_name: (str) name of google sheet you want to pull from
+            tab_name: (str) name of the tab from the google sheet you want
+            to pull from
 
         Returns:
             Single column pandas dataframe of email addresses in the Google sheet
         """
-        regex = re.compile(find_regex, re.IGNORECASE)
         sheets_info_dict = self.get_all_sheets()
-        try:
-            name_of_email_sheet = list(filter(regex.match,
-                                              sheets_info_dict.keys()))[0]
-        except:
-            name_of_email_sheet = None
-            print(f'Could not find sheet with regex: {find_regex}')
-            print('Reason unknown')
 
         sheet = self.service_sheets.spreadsheets()
-        spreadsheet_id = sheets_info_dict[name_of_email_sheet]['id']
-        sheet_range = '!A:Z'
+        spreadsheet_id = sheets_info_dict[sheet_name]['id']
+        sheet_range = f"'{tab_name}'!A:Z"
         result = sheet.values().get(spreadsheetId=spreadsheet_id,
                                     range=sheet_range).execute()
         values = result.get('values', [])
+        headers = values[0]
+        rows = values[1:]
+
         if not values:
             print('no data found')
 
-        df = pd.DataFrame(values[1:], columns=values[0][0:-1])
+        df = pd.DataFrame(rows, columns=headers)
         sheet_emails = df['Email Address']
 
         return sheet_emails

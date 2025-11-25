@@ -9,17 +9,17 @@ __author__ = 'Rahul I. Patel, PhD'
 #      EDIT THIS SECTION
 # =====================================================================================================
 event_day = 'TUES.'
-event_month = 'Nov'
-event_date = '4th'
-event_edition = "Sounds & Stories Edition"
+event_month = 'Dec'
+event_date = '9th'
+event_edition = "Valar & Vitality Edition"
 
-speaker1_name = 'Kaitlin Porter'
-speaker1_title = "Ancient Astronomy & Story of Our Stars"
+speaker1_name = 'Harrison Blake-Goszyk'
+speaker1_title = "Why the Hell is Earth so Perfect for Life?"
 
-speaker2_name = 'Jennifer James'
-speaker2_title = "How Movies Make Space Sound Epic"
+speaker2_name = 'Dr. Rithya Kunnawalkam Elayavalli'
+speaker2_title = "Cosmology of Middle Earth"
 
-eventbrite_link = 'https://www.eventbrite.com/e/astronomy-on-tap-sounds-stories-edition-tickets-1826709801189?aff=oddtdtcreator'
+eventbrite_link = 'https://www.eventbrite.com/e/astronomy-on-tap-valar-and-vitality-edition-tickets-1968919667728?aff=oddtdtcreator'
 location = 'Fait La Force Brewing'
 pre_news = ''  # NEW LOCATION! NEW TIME!'
 other_news = ''  # additional messages
@@ -45,8 +45,12 @@ html_content = f"""
     <p>Make sure to <a href="{eventbrite_link}" target="_blank">RSVP for the free event at EventBrite</a>.</p>
     <p>Please share to all and any who might be interested!</p>
     <p><strong>Doors 6:00pm | Event 7:00 pm</strong></p>
-
-    <p>If you wish to unsubscribe, reply to this email</p>
+    
+    <p>Check out our <a href="https://astronomyontap.org/locations/nashville-tn/" target="_blank">Chapter Site and upcoming event dates</a>.</p>
+    
+    <p>Have any feedback for us? Please fill out this <a href="https://forms.gle/QbbadNWP6apfRkTT8" target="_blank">quick survey</a>.</p> 
+    
+    <p>If you wish to unsubscribe, please reply to this email.</p>
     <p>Sincerely,
     <br>AoT Nashville Team</p>
 <br>
@@ -76,7 +80,8 @@ html_content = f"""
 gmAPI = gat.GmailAPI()
 sender = 'aotnashville@gmail.com'
 sender_name = 'Astro on Tap Nashville'
-
+google_sheet_name = 'Responses_Email_Feedback_SpeakerStuff'
+email_tab_name = 'Email List'
 # ================================================================
 # GET CONTACTS
 # ================================================================
@@ -87,10 +92,8 @@ if contact_bool == 't':
     new_email_list = [sender]
 elif contact_bool == 'e':
     # contacts from GOOGLE sheets
-    find_regex_sheetname = '.*responses*.*email*.'  # '.*form*.*responses*.'
-    sheet_tab_name = 'Email List'
-    contacts_sheet = gmAPI.get_contacts_sheets(find_regex_sheetname,
-                                               sheet_tab_name).to_list()
+    contacts_sheet = gmAPI.get_contacts_sheets(google_sheet_name,
+                                               email_tab_name).to_list()  # ,
 
     new_email_list = np.concatenate([contacts_sheet, contacts_gmail])
     new_email_list = np.unique(new_email_list)

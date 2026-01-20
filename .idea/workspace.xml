@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="2c8c2041-a699-45f4-963b-137f7d7e19fe" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gmail_api_tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/gmail_api_tools.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gmail_send.py" beforeDir="false" afterPath="$PROJECT_DIR$/gmail_send.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

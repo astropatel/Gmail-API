@@ -23,10 +23,10 @@ event_tab_name = 'Schedule'
 # ================================================================
 # FLYERS TO ATTACH - LOOK FOR CURRENT MONTH FLYERS
 # ================================================================
-file_path = ('/Users/darthpatel/Library/CloudStorage/GoogleDrive-'
-             'aotnashville@gmail.com/My Drive/Event_flyers/')
+flyer_file_path = ('/Users/darthpatel/Library/CloudStorage/GoogleDrive-'
+                   'aotnashville@gmail.com/My Drive/Event_flyers/')
 
-files_2_attach = glob.glob(f'{file_path}*{event_month}*.png')
+files_2_attach = glob.glob(f'{flyer_file_path}*{event_month}*.png')
 
 print(f'Attached files: {files_2_attach}')
 

@@ -62,3 +62,8 @@ You should be set to use the associated script.
   * See below for images of the google sheet screenshots
   * Body of the email is in the ``gmail_send.py`` script
   * Prompts will ask if you wish to send a test email to yourself or eamil everyone via bcc.
+
+<img width="828" height="540" alt="image" src="https://github.com/user-attachments/assets/ccbb8170-8db3-49be-9596-6657c366d320" />
+<img width="592" height="293" alt="image" src="https://github.com/user-attachments/assets/2820b3b6-a0f6-4a81-9964-f991c54e7255" />
+
+

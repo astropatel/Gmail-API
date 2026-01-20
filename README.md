@@ -45,10 +45,20 @@ To set-it up, you need to set-up the GMAIL API. This will produce the correct cr
 
 5. Set Up Your Python Environment
 
-Install Required Libraries:
-Open your terminal or command prompt.
-Install the necessary Python libraries using pip
+ * Install Required Libraries:
+ * Open your terminal or command prompt.
+ * Install the necessary Python libraries using pip
 `pip install --upgrade google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 `
 
 You should be set to use the associated script.
+
+6. Run the script
+
+  * The file ``gmail_send.py`` is the main script you'll need to run
+  * It accesses all your google sheets in the google drive you've assigned through the process above
+  * Right now, it pulls event information through one sheet as seen below, and then also pulls every email address in another sheet and adds it to the list of emails in your google contacts to send out the email
+  * It also locates flyers (whatever format) through the flyer ``file_path`` variable and attaches all files to the email.
+  * See below for images of the google sheet screenshots
+  * Body of the email is in the ``gmail_send.py`` script
+  * Prompts will ask if you wish to send a test email to yourself or eamil everyone via bcc.

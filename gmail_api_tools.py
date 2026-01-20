@@ -116,6 +116,24 @@ def create_message(sender, bcc, subject, html_content,
     return {'raw': encoded_message}
 
 
+def smart_title(text:str) -> str:
+    """
+    Title-case a string while correctly handling hyphens and apostrophes.
+
+    Capitalizes each word segment (including hyphenated names) without
+    breaking possessives or contractions.
+    Args:
+        text (str): string that needs to be capitalized
+
+    Returns:
+        Capitalized string
+
+    """
+    def cap(match):
+        return match.group(0).capitalize()
+
+    return re.sub(r"[A-Za-z]+('[A-Za-z]+)?", cap, text)
+
 class GmailAPI:
 
     def __init__(self):
@@ -138,6 +156,7 @@ class GmailAPI:
         # THIS HELPS TO SUPPRESS OATH SCOPE CHANGE WARNINGS
         # https://stackoverflow.com/questions/51499034/google-oauthlib-scope-has-changed
         # os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
 
     def get_emails_by_label(self, label_id):
         """
@@ -212,6 +231,7 @@ class GmailAPI:
         """
         Get the names, IDs, and urls of all the Google sheets in your
         Google Drive.
+        In excel terms, sheets==workbook.
 
         Returns:
             dictionary with sheet names, url, and sheet id {'[name]':{'url':..., 'id':...}...}
@@ -232,11 +252,37 @@ class GmailAPI:
 
         return sheets_info
 
-    def get_contacts_sheets(self, sheet_name, tab_name):
+    def get_sheet_tab_data_raw(self,sheet_name, tab_name):
+        """
+        Get raw data from a particular google sheet (i.e., workbook).
+        It only extracts the data and does not performa any tabular
+        manipulations.
+        Args:
+            sheet_name: (str) name of google sheet you want to pull from
+            tab_name: (str) name of the tab from the google sheet you want
+            to pull from
+
+        Returns:
+            list of data from the tab on the input google sheet.
+        """
+
+        all_sheets_info_dict = self.get_all_sheets()
+
+        sheet = self.service_sheets.spreadsheets()
+        spreadsheet_id = all_sheets_info_dict[sheet_name]['id']
+        sheet_range = f"'{tab_name}'!A:Z"
+        result = sheet.values().get(spreadsheetId=spreadsheet_id,
+                                    range=sheet_range).execute()
+        values = result.get('values', [])
+
+        return values
+
+    def get_pandas_sheet_df(self, sheet_name, tab_name):
 
         """
-        Get the email addresses of all the contacts in
-        a given sheet.
+        Return the data from a google sheet from a specific tab
+        in the form of a pandas dataframe.
+        Sheet == workbook in excel terms
         todo: remove service drive when it turns into a class
         Args:
             sheet_name: (str) name of google sheet you want to pull from
@@ -244,16 +290,10 @@ class GmailAPI:
             to pull from
 
         Returns:
-            Single column pandas dataframe of email addresses in the Google sheet
+            Dataframe of data from input sheet name
         """
-        sheets_info_dict = self.get_all_sheets()
 
-        sheet = self.service_sheets.spreadsheets()
-        spreadsheet_id = sheets_info_dict[sheet_name]['id']
-        sheet_range = f"'{tab_name}'!A:Z"
-        result = sheet.values().get(spreadsheetId=spreadsheet_id,
-                                    range=sheet_range).execute()
-        values = result.get('values', [])
+        values = self.get_sheet_tab_data_raw(sheet_name, tab_name)
         headers = values[0]
         rows = values[1:]
 
@@ -261,9 +301,8 @@ class GmailAPI:
             print('no data found')
 
         df = pd.DataFrame(rows, columns=headers)
-        sheet_emails = df['Email Address']
 
-        return sheet_emails
+        return df
 
     def send_message(self, user_id, message):
         """
@@ -284,3 +323,4 @@ class GmailAPI:
             return message
         except Exception as error:
             print(f'An error occurred: {error}')
+

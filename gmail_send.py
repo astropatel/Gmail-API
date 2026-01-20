@@ -1,25 +1,69 @@
 import sys
+import re
 import glob
+import datetime
+import pandas as pd
 import numpy as np
 import gmail_api_tools as gat
 
 __author__ = 'Rahul I. Patel, PhD'
+gmAPI = gat.GmailAPI()
 
-# =====================================================================================================
+# ===================================================================
 #      EDIT THIS SECTION
-# =====================================================================================================
+# ===================================================================
 event_day = 'TUES.'
-event_month = 'Dec'
-event_date = '9th'
-event_edition = "Valar & Vitality Edition"
+event_month = 'Jan'
+event_date = '27th'
+event_year = '2026'
 
-speaker1_name = 'Harrison Blake-Goszyk'
-speaker1_title = "Why the Hell is Earth so Perfect for Life?"
+sheet_name_events = 'Schedule_Bank_Trivia_Venue'
+event_tab_name = 'Schedule'
 
-speaker2_name = 'Dr. Rithya Kunnawalkam Elayavalli'
-speaker2_title = "Cosmology of Middle Earth"
+# ================================================================
+# FLYERS TO ATTACH - LOOK FOR CURRENT MONTH FLYERS
+# ================================================================
+file_path = ('/Users/darthpatel/Library/CloudStorage/GoogleDrive-'
+             'aotnashville@gmail.com/My Drive/Event_flyers/')
 
-eventbrite_link = 'https://www.eventbrite.com/e/astronomy-on-tap-valar-and-vitality-edition-tickets-1968919667728?aff=oddtdtcreator'
+files_2_attach = glob.glob(f'{file_path}*{event_month}*.png')
+
+print(f'Attached files: {files_2_attach}')
+
+stop_or_cont = input("y to continue, n to stop: ")
+if stop_or_cont == 'n':
+    sys.exit("Execution halted")
+
+# ================================================================
+# GRAB DATA ON CURRENT DATE EVENT FROM GOOGLE SHEET
+# ================================================================
+formatted_date = datetime.date(int(event_year),
+                               datetime.datetime.strptime(event_month,'%b').month,
+                               int(re.sub(r'(st|nd|rd|th)', '',
+                                          event_date))).strftime('%m/%d/%Y')
+
+target_date = pd.to_datetime(formatted_date, format="%m/%d/%Y")
+
+df_events = gmAPI.get_pandas_sheet_df(sheet_name_events, event_tab_name)
+df_events["Event Date_dt"] = pd.to_datetime(df_events["Event Date"],
+                                            format="%m/%d/%Y", errors="coerce")
+
+title_case_headers = ['MC', 'Edition Name', 'Speaker 1', 'Speaker 2',
+                      'Talk 1', 'Talk 2']
+for tch in title_case_headers:
+    df_events[tch] = df_events[tch].fillna("").apply(gat.smart_title)
+
+row_event = df_events.loc[df_events["Event Date_dt"] == target_date].iloc[0]
+
+event_edition = row_event['Edition Name']
+
+speaker1_name = row_event['Speaker 1']
+speaker1_title = row_event['Talk 1']
+
+speaker2_name = row_event['Speaker 2']
+speaker2_title = row_event['Talk 2']
+
+eventbrite_link = row_event['EventBrite Link']
 location = 'Fait La Force Brewing'
 pre_news = ''  # NEW LOCATION! NEW TIME!'
 other_news = ''  # additional messages
@@ -32,6 +76,7 @@ html_content = f"""
 </head>
 <body>
     <p>Dear AoT-ers!</p>
+    
     <p><strong>{pre_news}</strong></p>
     <p>We are pleased to announce that our <strong>{event_edition}</strong> event for
     Astronomy on Tap will be held on <strong>{event_day} {event_month} {event_date}</strong> at <strong><a href="https://www.faitlaforcebrewing.com/" target="_blank">{location}</a></strong>!</p>
@@ -77,7 +122,6 @@ html_content = f"""
 """
 
 # =====================================================================================================
-gmAPI = gat.GmailAPI()
 sender = 'aotnashville@gmail.com'
 sender_name = 'Astro on Tap Nashville'
 google_sheet_name = 'Responses_Email_Feedback_SpeakerStuff'
@@ -92,9 +136,9 @@ if contact_bool == 't':
     new_email_list = [sender]
 elif contact_bool == 'e':
     # contacts from GOOGLE sheets
-    contacts_sheet = gmAPI.get_contacts_sheets(google_sheet_name,
-                                               email_tab_name).to_list()  # ,
-
+    contacts_sheet_df = gmAPI.get_pandas_sheet_df(google_sheet_name,
+                                                  email_tab_name).to_list()
+    contacts_sheet = contacts_sheet_df['Email Address']
     new_email_list = np.concatenate([contacts_sheet, contacts_gmail])
     new_email_list = np.unique(new_email_list)
 else:
@@ -117,17 +161,6 @@ contacts_to_bcc = contacts_to_bcc_string
 subject = f'[Astro on Tap] {event_month} {event_date} - {event_edition}'
 message_text = html_content
 
-# FLYERS TO ATTACH - LOOK FOR CURRENT MONTH FLYERS
-file_path = ('/Users/darthpatel/Library/CloudStorage/GoogleDrive-'
-             'aotnashville@gmail.com/My Drive/Event_flyers/')
-
-files_2_attach = glob.glob(f'{file_path}*{event_month}*.png')
-
-print(f'Attached files: {files_2_attach}')
-
-stop_or_cont = input("y to continue, n to stop: ")
-if stop_or_cont == 'n':
-    sys.exit("Execution halted")
 
 # ================================================================
 # PUT IT ALL TOGETHER AND SEND
